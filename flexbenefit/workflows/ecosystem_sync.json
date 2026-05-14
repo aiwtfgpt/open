@@ -1,0 +1,74 @@
+{
+  "name": "FlexBenefit_Ecosystem_Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payroll-sync-trigger",
+        "options": {}
+      },
+      "id": "sync-1",
+      "name": "Payroll_Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.payroll-provider.com/v1/deductions/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.PAYROLL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "employee_id", "value": "={{ $json.employee_id }}" },
+            { "name": "deduction_amount", "value": "={{ $json.new_deduction }}" }
+          ]
+        }
+      },
+      "id": "sync-2",
+      "name": "Update_Payroll_Deduction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.employee-navigator.com/v1/enrollments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.EN_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "emp_id", "value": "={{ $json.employee_id }}" },
+            { "name": "benefit_id", "value": "={{ $json.benefit_id }}" },
+            { "name": "status", "value": "enrolled" }
+          ]
+        }
+      },
+      "id": "sync-3",
+      "name": "Sync_to_Employee_Navigator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 300]
+    }
+  ],
+  "connections": {
+    "sync-1": {
+      "main": [[{ "node": "sync-2", "type": "main", "index": 0 }]]
+    },
+    "sync-2": {
+      "main": [[{ "node": "sync-3", "type": "main", "index": 0 }]]
+    }
+  }
+}

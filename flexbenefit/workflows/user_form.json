@@ -1,0 +1,69 @@
+{
+  "name": "FlexBenefit_User_Form",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "FlexBenefit Enrollment",
+        "formDescription": "Select your benefit. Note: You cannot exceed your remaining balance.",
+        "formFields": {
+          "values": [
+            {
+              "fieldId": "employee_id",
+              "label": "Employee ID",
+              "required": true
+            },
+            {
+              "fieldId": "benefit_selection",
+              "label": "Select Benefit",
+              "fieldType": "dropdown",
+              "options": [
+                { "name": "AirMedCare ($15.00)", "value": "15.00" },
+                { "name": "Dental Basic ($10.00)", "value": "10.00" },
+                { "name": "Vision Pro ($25.00)", "value": "25.00" },
+                { "name": "Pet Insurance ($12.50)", "value": "12.50" }
+              ],
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f1",
+      "name": "n8n Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/enrollment-submit",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "employee_id", "value": "={{$json[\"employee_id\"]}}" },
+            { "name": "selected_benefit_cost", "value": "={{parseFloat($json[\"benefit_selection\"])}}" }
+          ]
+        }
+      },
+      "id": "f2",
+      "name": "HTTP POST to Logic Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "f1": {
+      "main": [
+        [
+          {
+            "node": "f2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

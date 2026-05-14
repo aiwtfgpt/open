@@ -1,0 +1,62 @@
+{
+  "name": "FlexBenefit_Outbound_Nudges",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9
+            }
+          ]
+        },
+        "timezone": "America/New_York"
+      },
+      "id": "v1",
+      "name": "Daily_9AM_Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3 ~/flexbenefit/scripts/find_underused_accounts.py"
+      },
+      "id": "v2",
+      "name": "Find_Low_Balance_Users",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.VAPI_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "assistantId", "value": "{{ $env.VAPI_ASSISTANT_ID }}" },
+            { "name": "phoneNumber", "value": "={{ $json.phone_number }}" },
+            { "name": "customerName", "value": "={{ $json.first_name }}" },
+            { "name": "prompt_override", "value": "Remind {{ $json.first_name }} they have ${{ $json.available_flex_spend }} left before the deadline." }
+          ]
+        }
+      },
+      "id": "v3",
+      "name": "Trigger_Vapi_Voice_Nudge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 300]
+    }
+  ],
+  "connections": {
+    "v1": { "main": [[{ "node": "v2", "type": "main", "index": 0 }]] },
+    "v2": { "main": [[{ "node": "v3", "type": "main", "index": 0 }]] }
+  }
+}
